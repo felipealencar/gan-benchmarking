@@ -277,20 +277,27 @@ def define_composite(discriminators, generators):
 	return model_list
 
 # load dataset
-def load_real_samples():
-	train = pd.read_json('./data/train.json')
-	train['inc_angle'] = pd.to_numeric(train['inc_angle'],errors='coerce')
-	icebergs = train[train.is_iceberg==1]
-	ships = train[train.is_iceberg==0]
+# def load_real_samples(X_train_array):
+# 	train = pd.read_json('./data/train.json')
+# 	train['inc_angle'] = pd.to_numeric(train['inc_angle'],errors='coerce')
+# 	icebergs = train[train.is_iceberg==1]
+# 	ships = train[train.is_iceberg==0]
 
-	# Convert DataFrame to NumPy array
-	# Convert DataFrame columns to NumPy arrays
-	band1_array = np.array([np.array(x) for x in icebergs['band_1']])
-	band2_array = np.array([np.array(x) for x in icebergs['band_2']])
-	X = np.stack([band1_array, band2_array], axis=-1)
+# 	# Convert DataFrame to NumPy array
+# 	# Convert DataFrame columns to NumPy arrays
+# 	band1_array = np.array([np.array(x) for x in icebergs['band_1']])
+# 	band2_array = np.array([np.array(x) for x in icebergs['band_2']])
+# 	X = np.stack([band1_array, band2_array], axis=-1)
+# 	X = X.astype('float32')
+# 	X = (X - 127.5) / 127.5
+# 	return X
+
+def load_real_samples(X_train_array):
+	X = np.stack(X_train_array, axis=-1)
 	X = X.astype('float32')
 	X = (X - 127.5) / 127.5
 	return X
+
 
 # select real samples
 def generate_real_samples(dataset, n_samples):
@@ -353,9 +360,9 @@ def train_epochs(g_model, d_model, gan_model, dataset, n_epochs, n_batch, latent
 		z_input = generate_latent_points(latent_dim, n_batch)
 		y_real2 = ones((n_batch, 1))
 		g_loss = gan_model.train_on_batch(z_input, y_real2)
-		generator_loss_values.append(g_loss)
 		# summarize loss on this batch
 		print('>%d, d1=%.3f, d2=%.3f g=%.3f' % (i+1, d_loss1, d_loss2, g_loss))
+	generator_loss_values.append(g_loss)
 	return g_model, generator_loss_values
 
 # scale images to preferred size
@@ -395,7 +402,7 @@ def summarize_performance(status, g_model, latent_dim, n_samples=25):
 	print('>Saved: %s and %s' % (filename1, filename2))
 
 # train the generator and discriminator
-def train(g_models, d_models, gan_models, dataset, latent_dim, e_norm, e_fadein, n_batch):
+def train(g_models, d_models, gan_models, dataset, latent_dim, e_norm, e_fadein, n_batch, generator_loss_values):
 	# fit the baseline model
 	g_normal, d_normal, gan_normal = g_models[0][0], d_models[0][0], gan_models[0][0]
 	# scale dataset to appropriate size
@@ -404,7 +411,6 @@ def train(g_models, d_models, gan_models, dataset, latent_dim, e_norm, e_fadein,
 	scaled_data = scale_dataset(dataset, gen_shape[1:])
 	print('Scaled Data', scaled_data.shape)
 	# train normal or straight-through models
-	generator_loss_values = []
 	generator, generator_loss_values = train_epochs(g_normal, d_normal, gan_normal, scaled_data, e_norm[0], n_batch[0], latent_dim, generator_loss_values)
 	summarize_performance('tuned', g_normal, latent_dim)
 	# process each level of growth
@@ -427,7 +433,7 @@ def train(g_models, d_models, gan_models, dataset, latent_dim, e_norm, e_fadein,
 
 def build(X_train_array):
 	# number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
-	n_blocks = 6
+	n_blocks = 3
 	# size of the latent space
 	latent_dim = 100
 	# define models
@@ -437,12 +443,12 @@ def build(X_train_array):
 	# define composite models
 	gan_models = define_composite(d_models, g_models)
 	# load image data
-	dataset = load_real_samples()
+	dataset = load_real_samples(X_train_array)
 	# train model
 	n_batch = [32, 32, 32]
 	# 10 epochs == 500K images per training phase
 	n_epochs = [2, 2, 2]
 
 	generator_loss_values = []
-	generator, generator_loss_values = train(g_models, d_models, gan_models, dataset, latent_dim, n_epochs, n_epochs, n_batch)
+	generator, generator_loss_values = train(g_models, d_models, gan_models, dataset, latent_dim, n_epochs, n_epochs, n_batch, generator_loss_values)
 	return generator, generator_loss_values
