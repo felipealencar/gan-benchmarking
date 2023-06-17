@@ -81,41 +81,23 @@ def scores(real_images, generated_images):
     return fid, fid_error, bhattacharyya, bhattacharyya_error, chi_square, chi_square_error, correlation, correlation_error, intersection, intersection_error
 
 
-def calculate_bhattacharyya(real_images, generated_images):
-    # Convert images to grayscale
-    real_gray = np.mean(real_images, axis=-1)
-    generated_gray = np.mean(generated_images, axis=-1)
+def calculate_bhattacharyya(real_images, generated_images, num_samples=1000):
+    hist_real, _ = np.histogram(real_images.flatten(), bins=256, range=(0, 1))
+    hist_generated, _ = np.histogram(generated_images.flatten(), bins=256, range=(0, 1))
+    total_samples = real_images.size + generated_images.size
 
-    # Flatten the images
-    real_flat = real_gray.reshape(-1)
-    generated_flat = generated_gray.reshape(-1)
+    bhattacharyya_values = []
+    for _ in range(num_samples):
+        sampled_real = np.random.choice(real_images.flatten(), size=real_images.size, replace=True)
+        sampled_generated = np.random.choice(generated_images.flatten(), size=generated_images.size, replace=True)
+        sampled_hist_real, _ = np.histogram(sampled_real, bins=256, range=(0, 1))
+        sampled_hist_generated, _ = np.histogram(sampled_generated, bins=256, range=(0, 1))
 
-    # Calculate the histogram of pixel intensities
-    bins = np.linspace(0, 255, num=256)
-    real_hist, _ = np.histogram(real_flat, bins=bins)
-    generated_hist, _ = np.histogram(generated_flat, bins=bins)
+        b_coeff = np.sum(np.sqrt(sampled_hist_real * sampled_hist_generated)) / np.sqrt(hist_real.sum() * hist_generated.sum())
+        bhattacharyya_values.append(b_coeff)
 
-    # Normalize the histograms
-    real_hist = real_hist / np.sum(real_hist)
-    generated_hist = generated_hist / np.sum(generated_hist)
-
-    # Calculate the Bhattacharyya coefficient
-    bhattacharyya = np.sum(np.sqrt(real_hist * generated_hist))
-
-    # Calculate margin error
-    num_samples = real_images.shape[0]
-    bhattacharyya_errors = []
-    for _ in range(1000):
-        sampled_real = np.random.choice(real_flat, size=num_samples, replace=True)
-        sampled_generated = np.random.choice(generated_flat, size=num_samples, replace=True)
-        sampled_real_hist, _ = np.histogram(sampled_real, bins=bins)
-        sampled_generated_hist, _ = np.histogram(sampled_generated, bins=bins)
-        sampled_real_hist = sampled_real_hist / np.sum(sampled_real_hist)
-        sampled_generated_hist = sampled_generated_hist / np.sum(sampled_generated_hist)
-        sampled_bhattacharyya = np.sum(np.sqrt(sampled_real_hist * sampled_generated_hist))
-        bhattacharyya_errors.append(sampled_bhattacharyya)
-
-    margin_error = 1.96 * np.std(bhattacharyya_errors)
+    bhattacharyya = np.mean(bhattacharyya_values)
+    margin_error = 1.96 * np.std(bhattacharyya_values)
 
     return bhattacharyya, margin_error
 
@@ -149,8 +131,10 @@ def calculate_chi_square(real_images, generated_images, num_samples=1000):
     for _ in range(num_samples):
         sampled_real = np.random.choice(real_images.flatten(), size=real_images.size, replace=True)
         sampled_generated = np.random.choice(generated_images.flatten(), size=generated_images.size, replace=True)
+        sampled_observed_real, _ = np.histogram(sampled_real, bins=256, range=(0, 1))
         sampled_observed_generated, _ = np.histogram(sampled_generated, bins=256, range=(0, 1))
-        sampled_chi_square = np.sum((sampled_observed_generated - expected) ** 2 / expected)
+        sampled_expected = (sampled_observed_real + sampled_observed_generated) / 2.0
+        sampled_chi_square = np.sum((sampled_observed_generated - sampled_expected) ** 2 / (sampled_expected + 1e-10))
         chi_square_values.append(sampled_chi_square)
 
     chi_square = np.mean(chi_square_values)
@@ -188,3 +172,5 @@ def calculate_intersection(real_images, generated_images, num_samples=1000):
     margin_error = 1.96 * np.std(intersection_values)
 
     return intersection, margin_error
+
+# TODO: ADD THE Structural Similarity Index (SSIM).
