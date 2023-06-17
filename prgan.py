@@ -360,9 +360,13 @@ def train_epochs(g_model, d_model, gan_model, dataset, n_epochs, n_batch, latent
 		z_input = generate_latent_points(latent_dim, n_batch)
 		y_real2 = ones((n_batch, 1))
 		g_loss = gan_model.train_on_batch(z_input, y_real2)
-		# summarize loss on this batch
-		print('>%d, d1=%.3f, d2=%.3f g=%.3f' % (i+1, d_loss1, d_loss2, g_loss))
-	generator_loss_values.append(g_loss)
+		# summarize loss on this epoch
+		if i % 5 == 0:
+			print('>%d, d1=%.3f, d2=%.3f g=%.3f' % (i+1, d_loss1, d_loss2, g_loss))
+			print('VALUE ADDED', g_loss, i)
+			generator_loss_values.append(g_loss)
+
+		
 	return g_model, generator_loss_values
 
 # scale images to preferred size
@@ -447,7 +451,7 @@ def build(X_train_array):
 	# train model
 	n_batch = [32, 32, 32]
 	# 10 epochs == 500K images per training phase
-	n_epochs = [2, 2, 2]
+	n_epochs = [30, 30, 20]
 
 	generator_loss_values = []
 	generator, generator_loss_values = train(g_models, d_models, gan_models, dataset, latent_dim, n_epochs, n_epochs, n_batch, generator_loss_values)
