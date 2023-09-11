@@ -1,7 +1,6 @@
 ./conda
 data/*
 .DS_Store
-*.png
 *.pyc
 *.h5
 output.psd
