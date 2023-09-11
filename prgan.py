@@ -151,7 +151,7 @@ def add_discriminator_block(old_model, n_input_layers=3):
     return [model1, model2]
 
 # define the discriminator models for each image resolution
-def define_discriminator(n_blocks, input_shape=(4,4,2)):
+def define_discriminator(n_blocks, input_shape=(32,32,3)):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
 	# weight constraint
@@ -205,7 +205,7 @@ def add_generator_block(old_model):
 	g = PixelNormalization()(g)
 	g = LeakyReLU(alpha=0.2)(g)
 	# add new output layer
-	out_image = Conv2D(2, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
+	out_image = Conv2D(3, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
 	# define model
 	model1 = Model(old_model.input, out_image)
 	# get the output layer from old model
@@ -219,7 +219,7 @@ def add_generator_block(old_model):
 	return [model1, model2]
 
 # define generator models
-def define_generator(latent_dim, n_blocks, in_dim=4):
+def define_generator(latent_dim, n_blocks, in_dim=32):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
 	# weight constraint
@@ -239,7 +239,7 @@ def define_generator(latent_dim, n_blocks, in_dim=4):
 	g = PixelNormalization()(g)
 	g = LeakyReLU(alpha=0.2)(g)
 	# conv 1x1, output block
-	out_image = Conv2D(2, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
+	out_image = Conv2D(3, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
 	# define model
 	model = Model(in_latent, out_image)
 	# store model
@@ -437,7 +437,7 @@ def train(g_models, d_models, gan_models, dataset, latent_dim, e_norm, e_fadein,
 
 def build(X_train_array):
 	# number of growth phases, e.g. 6 == [4, 8, 16, 32, 64, 128]
-	n_blocks = 3
+	n_blocks = 2
 	# size of the latent space
 	latent_dim = 100
 	# define models
@@ -449,9 +449,9 @@ def build(X_train_array):
 	# load image data
 	dataset = load_real_samples(X_train_array)
 	# train model
-	n_batch = [32, 32, 32]
+	n_batch = [32, 32]
 	# 10 epochs == 500K images per training phase
-	n_epochs = [30, 30, 20]
+	n_epochs = [50, 50]
 
 	generator_loss_values = []
 	generator, generator_loss_values = train(g_models, d_models, gan_models, dataset, latent_dim, n_epochs, n_epochs, n_batch, generator_loss_values)
