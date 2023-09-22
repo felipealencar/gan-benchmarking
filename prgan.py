@@ -151,7 +151,7 @@ def add_discriminator_block(old_model, n_input_layers=3):
     return [model1, model2]
 
 # define the discriminator models for each image resolution
-def define_discriminator(n_blocks, input_shape=(32,32,3)):
+def define_discriminator(n_blocks, input_shape=(32,32,2)):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
 	# weight constraint
@@ -205,7 +205,7 @@ def add_generator_block(old_model):
 	g = PixelNormalization()(g)
 	g = LeakyReLU(alpha=0.2)(g)
 	# add new output layer
-	out_image = Conv2D(3, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
+	out_image = Conv2D(2, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
 	# define model
 	model1 = Model(old_model.input, out_image)
 	# get the output layer from old model
@@ -239,7 +239,7 @@ def define_generator(latent_dim, n_blocks, in_dim=32):
 	g = PixelNormalization()(g)
 	g = LeakyReLU(alpha=0.2)(g)
 	# conv 1x1, output block
-	out_image = Conv2D(3, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
+	out_image = Conv2D(2, (1,1), padding='same', kernel_initializer=init, kernel_constraint=const)(g)
 	# define model
 	model = Model(in_latent, out_image)
 	# store model

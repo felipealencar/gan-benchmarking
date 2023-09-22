@@ -5,7 +5,7 @@ import numpy as np
 # Generator Model
 def build_generator_wgan():
     model = tf.keras.Sequential()
-    model.add(layers.Dense(18 * 18 * 256, use_bias=False, input_shape=(75 * 75 * 3,)))
+    model.add(layers.Dense(18 * 18 * 256, use_bias=False, input_shape=(75 * 75 * 2,)))
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
 
@@ -19,7 +19,7 @@ def build_generator_wgan():
     model.add(layers.BatchNormalization())
     model.add(layers.LeakyReLU())
 
-    model.add(layers.Conv2DTranspose(3, (4, 4), strides=(1, 1), padding='valid', use_bias=False, activation='tanh'))
+    model.add(layers.Conv2DTranspose(2, (4, 4), strides=(1, 1), padding='valid', use_bias=False, activation='tanh'))
 
     return model
 
@@ -27,7 +27,7 @@ def build_generator_wgan():
 # Critic Model
 def build_critic_wgan():
     model = tf.keras.Sequential()
-    model.add(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=[75, 75, 3]))
+    model.add(layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=[75, 75, 2]))
     model.add(layers.LeakyReLU())
     model.add(layers.Dropout(0.3))
 
@@ -82,7 +82,7 @@ def train_wgan(images, epochs=100, batch_size=64, critic_steps=5):
     def train_step(images):
         for i in range(critic_steps):
             # Generate random noise as input to the generator
-            noise = tf.random.normal([batch_size, 75*75*3])
+            noise = tf.random.normal([batch_size, 75*75*2])
             print('critic range', i)
             with tf.GradientTape() as critic_tape:
                 # Generate fake images from the noise using the generator
@@ -102,7 +102,7 @@ def train_wgan(images, epochs=100, batch_size=64, critic_steps=5):
             critic_optimizer.apply_gradients(zip(critic_gradients, critic.trainable_variables))
 
         # Generate random noise as input to the generator
-        noise = tf.random.normal([batch_size, 75*75*3])
+        noise = tf.random.normal([batch_size, 75*75*2])
 
         with tf.GradientTape() as generator_tape:
             # Generate fake images from the noise using the generator

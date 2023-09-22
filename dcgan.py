@@ -22,7 +22,7 @@ def build_generator(OPTIMIZER, NOISE_DIM):
         Conv2DTranspose(128, (2, 2), strides=(1, 1), padding='valid'),
         LeakyReLU(alpha=0.2),
 
-        Conv2D(3, (3, 3), padding='valid', activation='tanh')
+        Conv2D(2, (3, 3), padding='valid', activation='tanh')
     ], name="generator")
 
     model.summary()
@@ -33,7 +33,7 @@ def build_generator(OPTIMIZER, NOISE_DIM):
 
 def build_discriminator(OPTIMIZER):
     model = Sequential([
-        Conv2D(64, (3, 3), padding='same', input_shape=(75, 75, 3)),
+        Conv2D(64, (3, 3), padding='same', input_shape=(75, 75, 2)),
         LeakyReLU(alpha=0.2),
 
         Conv2D(75, (3, 3), strides=2, padding='same'),
